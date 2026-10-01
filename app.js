@@ -726,6 +726,30 @@ const PRESETS = [
 /* =========================================================================
    SANDBOX wiring
    ========================================================================= */
+/* ---- editores com realce de sintaxe (camada colorida sob o textarea) ---- */
+const HL_REFRESH = [];
+function setupEditor(taId, hlId){
+  const ta = document.getElementById(taId);
+  const hl = document.getElementById(hlId);
+  if(!ta || !hl) return;
+  const render = ()=>{ hl.innerHTML = highlightXml(ta.value) + "\n"; };
+  const syncScroll = ()=>{ hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft; };
+  ta.addEventListener("input", ()=>{ render(); syncScroll(); });
+  ta.addEventListener("scroll", syncScroll);
+  ta.addEventListener("keydown", (e)=>{
+    if(e.key === "Tab"){
+      e.preventDefault();
+      const s = ta.selectionStart, en = ta.selectionEnd;
+      ta.value = ta.value.slice(0, s) + "  " + ta.value.slice(en);
+      ta.selectionStart = ta.selectionEnd = s + 2;
+      render(); syncScroll();
+    }
+  });
+  HL_REFRESH.push(()=>{ render(); syncScroll(); });
+  render();
+}
+function refreshEditors(){ HL_REFRESH.forEach(f=>f()); }
+
 function renderResult(out){
   const el = document.getElementById("result");
   const steps = `
@@ -775,6 +799,7 @@ function runValidation(){
 function loadPreset(i){
   document.getElementById("xmlIn").value = PRESETS[i].xml;
   document.getElementById("xsdIn").value = PRESETS[i].xsd;
+  refreshEditors();
   runValidation();
   document.getElementById("result").scrollIntoView({behavior:"smooth", block:"nearest"});
 }
@@ -1034,10 +1059,13 @@ document.addEventListener("DOMContentLoaded", ()=>{
   buildConcepts();
   initToggleAnim();
   buildQuiz();
+  setupEditor("xmlIn", "xmlHL");
+  setupEditor("xsdIn", "xsdHL");
   document.getElementById("runBtn").addEventListener("click", runValidation);
   document.getElementById("clearBtn").addEventListener("click", ()=>{
     document.getElementById("xmlIn").value="";
     document.getElementById("xsdIn").value="";
+    refreshEditors();
     document.getElementById("result").innerHTML="";
   });
   document.getElementById("resetQuiz").addEventListener("click", ()=>buildQuiz(true));
