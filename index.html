@@ -30,8 +30,8 @@
   .eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.22em; text-transform:uppercase; color:var(--teal); font-weight:700}
 
   /* NAV */
-  nav{position:sticky; top:0; z-index:50; backdrop-filter:blur(12px);
-    background:rgba(255,255,255,.85); border-bottom:1px solid var(--line)}
+  nav{position:sticky; top:0; z-index:50;
+    background:#ffffff; border-bottom:1px solid var(--line)}
   nav .wrap{display:flex; align-items:center; gap:18px; height:60px}
   .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:-.02em; margin-right:auto}
   .brand .dot{width:11px; height:11px; border-radius:3px; background:var(--teal); box-shadow:0 0 14px var(--teal)}
@@ -148,6 +148,18 @@
   .errlist li{background:rgba(224,93,70,.08); border-left:3px solid var(--coral); border-radius:8px;
     padding:9px 12px; font-size:13px; font-family:var(--mono); color:#8a2d1c}
   .errlist li.warn{border-left-color:var(--yellow); color:#6b4e00; background:rgba(200,138,0,.1)}
+  .errlist .eln{display:inline-block; background:rgba(224,93,70,.2); color:#8a2d1c; font-weight:700;
+    font-family:var(--sans); font-size:11.5px; padding:1px 8px; border-radius:6px; margin-right:9px}
+  .xml-view-cap{font-size:12.5px; color:var(--mut); font-weight:600; margin:16px 0 7px}
+  .xml-view{background:linear-gradient(180deg,#0b1726,#081019); border:1px solid var(--line);
+    border-radius:12px; padding:12px 0; overflow-x:auto; font-family:var(--mono); font-size:12.5px;
+    line-height:1.7; color:#cdd9e6; box-shadow:0 10px 28px rgba(16,34,54,.14)}
+  .xml-view .xrow{display:flex; padding:0 16px; min-width:max-content}
+  .xml-view .ln{display:inline-block; width:28px; min-width:28px; text-align:right; margin-right:16px;
+    color:#5a6e82; user-select:none}
+  .xml-view .xcode{white-space:pre}
+  .xml-view .xrow.err{background:rgba(224,93,70,.18); box-shadow:inset 3px 0 0 var(--coral)}
+  .xml-view .xrow.err .ln{color:#ff9d87; font-weight:700}
   .steps{display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px; font-size:12.5px}
   .steps .s{padding:5px 10px; border-radius:999px; border:1px solid var(--line); color:var(--mut2)}
   .steps .s.pass{color:var(--teal); border-color:var(--line2); background:rgba(53,208,186,.08)}
