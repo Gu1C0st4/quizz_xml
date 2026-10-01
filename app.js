@@ -72,11 +72,15 @@ const SNIPS = {
 function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 function highlightXml(code){
   let s = esc(code);
-  s = s.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="hl-com">$1</span>');
-  s = s.replace(/(&lt;\?[\s\S]*?\?&gt;)/g, '<span class="hl-decl">$1</span>');
-  s = s.replace(/(&lt;\/?)([A-Za-z_][\w:.\-]*)/g, '$1<span class="hl-tag">$2</span>');
+  // 1) atributos primeiro (no texto puro, antes de inserir quaisquer <span>)
   s = s.replace(/([A-Za-z_][\w:.\-]*)=(")([^"]*)(")/g,
         '<span class="hl-attr">$1</span>=<span class="hl-str">$2$3$4</span>');
+  // 2) comentários
+  s = s.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="hl-com">$1</span>');
+  // 3) declaração
+  s = s.replace(/(&lt;\?[\s\S]*?\?&gt;)/g, '<span class="hl-decl">$1</span>');
+  // 4) etiquetas (os <span> já inseridos usam "<" real, não "&lt;", por isso não são afetados)
+  s = s.replace(/(&lt;\/?)([A-Za-z_][\w:.\-]*)/g, '$1<span class="hl-tag">$2</span>');
   return s;
 }
 function paintSnippets(){
@@ -1039,4 +1043,20 @@ document.addEventListener("DOMContentLoaded", ()=>{
   document.getElementById("resetQuiz").addEventListener("click", ()=>buildQuiz(true));
   loadPreset(0); // arranca com a rede válida
   initScrollAnim();
+
+  // menu hambúrguer (telemóvel)
+  const burger = document.getElementById('burger');
+  const navLinks = document.getElementById('navLinks');
+  if(burger && navLinks){
+    const setOpen = (open)=>{
+      navLinks.classList.toggle('open', open);
+      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      burger.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+    };
+    burger.addEventListener('click', ()=> setOpen(!navLinks.classList.contains('open')));
+    navLinks.querySelectorAll('a').forEach(a=> a.addEventListener('click', ()=> setOpen(false)));
+    document.addEventListener('click', (e)=>{
+      if(navLinks.classList.contains('open') && !navLinks.contains(e.target) && !burger.contains(e.target)) setOpen(false);
+    });
+  }
 });
