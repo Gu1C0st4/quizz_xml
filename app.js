@@ -335,33 +335,34 @@ function checkBase(base, v){
   }
 }
 function baseLabel(b){ return "xs:"+b; }
-function validateSimpleValue(rawValue, info, schema, errors, path){
+function validateSimpleValue(rawValue, info, schema, errors, path, node){
+  const add = msg => errors.push({ msg, node });
   const { base, facets } = resolveSimple(info, schema);
   const v = (rawValue==null ? "" : String(rawValue)).trim();
   if(!checkBase(base, v)){
-    errors.push({ msg:`${path}: o valor "${v||"(vazio)"}" não é um ${baseLabel(base)} válido.` });
+    add(`${path}: o valor "${v||"(vazio)"}" não é um ${baseLabel(base)} válido.`);
     return;
   }
   const enums = facets.filter(f=>f.kind==="enumeration").map(f=>f.value);
   if(enums.length && !enums.includes(v)){
-    errors.push({ msg:`${path}: "${v}" não está entre os valores permitidos (${enums.join(", ")}).` });
+    add(`${path}: "${v}" não está entre os valores permitidos (${enums.join(", ")}).`);
   }
   const patterns = facets.filter(f=>f.kind==="pattern").map(f=>f.value);
   if(patterns.length){
     const ok = patterns.some(p=>{ try{ return new RegExp("^(?:"+p+")$").test(v); }catch(e){ return true; } });
-    if(!ok) errors.push({ msg:`${path}: "${v}" não corresponde ao padrão ${patterns.join(" | ")}.` });
+    if(!ok) add(`${path}: "${v}" não corresponde ao padrão ${patterns.join(" | ")}.`);
   }
   const num = Number(v);
   for(const f of facets){
     const fv = f.value;
     switch(f.kind){
-      case "minInclusive": if(num <  Number(fv)) errors.push({msg:`${path}: ${v} tem de ser ≥ ${fv}.`}); break;
-      case "maxInclusive": if(num >  Number(fv)) errors.push({msg:`${path}: ${v} tem de ser ≤ ${fv}.`}); break;
-      case "minExclusive": if(num <= Number(fv)) errors.push({msg:`${path}: ${v} tem de ser > ${fv}.`}); break;
-      case "maxExclusive": if(num >= Number(fv)) errors.push({msg:`${path}: ${v} tem de ser < ${fv}.`}); break;
-      case "length":    if(v.length !== +fv) errors.push({msg:`${path}: deve ter exatamente ${fv} caracteres.`}); break;
-      case "minLength": if(v.length <  +fv) errors.push({msg:`${path}: deve ter no mínimo ${fv} caracteres.`}); break;
-      case "maxLength": if(v.length >  +fv) errors.push({msg:`${path}: deve ter no máximo ${fv} caracteres.`}); break;
+      case "minInclusive": if(num <  Number(fv)) add(`${path}: ${v} tem de ser ≥ ${fv}.`); break;
+      case "maxInclusive": if(num >  Number(fv)) add(`${path}: ${v} tem de ser ≤ ${fv}.`); break;
+      case "minExclusive": if(num <= Number(fv)) add(`${path}: ${v} tem de ser > ${fv}.`); break;
+      case "maxExclusive": if(num >= Number(fv)) add(`${path}: ${v} tem de ser < ${fv}.`); break;
+      case "length":    if(v.length !== +fv) add(`${path}: deve ter exatamente ${fv} caracteres.`); break;
+      case "minLength": if(v.length <  +fv) add(`${path}: deve ter no mínimo ${fv} caracteres.`); break;
+      case "maxLength": if(v.length >  +fv) add(`${path}: deve ter no máximo ${fv} caracteres.`); break;
     }
   }
 }
@@ -371,15 +372,15 @@ function validateAttributes(node, attrDecls, schema, errors, path){
     if(attr.name==="xmlns" || attr.prefix==="xmlns" || attr.prefix==="xsi" || attr.name==="xsi") continue;
     const an = attr.localName;
     const d = byName[an];
-    if(!d){ errors.push({ msg:`${path}: o atributo "${an}" não está declarado no XSD.` }); continue; }
+    if(!d){ errors.push({ msg:`${path}: o atributo "${an}" não está declarado no XSD.`, node }); continue; }
     const info = simpleInfoFromType(d.node.getAttribute("type"), d.node, schema);
-    validateSimpleValue(attr.value, info, schema, errors, `${path} @${an}`);
+    validateSimpleValue(attr.value, info, schema, errors, `${path} @${an}`, node);
     const fixed = d.node.getAttribute("fixed");
-    if(fixed!=null && attr.value!==fixed) errors.push({ msg:`${path}: o atributo "${an}" é fixo e tem de ser "${fixed}".` });
+    if(fixed!=null && attr.value!==fixed) errors.push({ msg:`${path}: o atributo "${an}" é fixo e tem de ser "${fixed}".`, node });
   }
   for(const a of attrDecls){
     if(a.use==="required" && !node.getAttribute(a.name)){
-      errors.push({ msg:`${path}: falta o atributo obrigatório "${a.name}".` });
+      errors.push({ msg:`${path}: falta o atributo obrigatório "${a.name}".`, node });
     }
   }
 }
@@ -413,13 +414,10 @@ function validateElement(node, decl, schema, errors, path){
     validateComplex(node, ti.node, schema, errors, path);
   } else if(ti.kind==="simple"){
     if(elChildren(node).length){
-      errors.push({ msg:`${path}: esperava texto simples, mas encontrou elementos filhos.` });
+      errors.push({ msg:`${path}: esperava texto simples, mas encontrou elementos filhos.`, node });
     }
-    const info = ti.primitive ? { base:ti.primitive, node:null }
-                              : simpleInfoFromType(null, decl, schema).node ? { base:"anyType", node:ti.node }
-                              : { base:"anyType", node:ti.node };
-    if(ti.node) validateSimpleValue(textOf(node), { base:"anyType", node:ti.node }, schema, errors, path);
-    else validateSimpleValue(textOf(node), { base:ti.primitive||"string", node:null }, schema, errors, path);
+    if(ti.node) validateSimpleValue(textOf(node), { base:"anyType", node:ti.node }, schema, errors, path, node);
+    else validateSimpleValue(textOf(node), { base:ti.primitive||"string", node:null }, schema, errors, path, node);
   }
 }
 function validateComplex(node, ct, schema, errors, path){
@@ -428,9 +426,9 @@ function validateComplex(node, ct, schema, errors, path){
   if(simpleContent){
     const ext = childByLocal(simpleContent,"extension") || childByLocal(simpleContent,"restriction");
     const base = ext ? stripPrefix(ext.getAttribute("base")||"string") : "string";
-    validateSimpleValue(textOf(node), { base:isPrimitive(base)?base:"string", node:schema.simpleTypes[base]||null }, schema, errors, path);
+    validateSimpleValue(textOf(node), { base:isPrimitive(base)?base:"string", node:schema.simpleTypes[base]||null }, schema, errors, path, node);
     validateAttributes(node, collectAttributes(ext, schema), schema, errors, path);
-    if(elChildren(node).length) errors.push({ msg:`${path}: simpleContent não permite elementos filhos.` });
+    if(elChildren(node).length) errors.push({ msg:`${path}: simpleContent não permite elementos filhos.`, node });
     return;
   }
   const complexContent = childByLocal(ct,"complexContent");
@@ -456,14 +454,14 @@ function validateComplex(node, ct, schema, errors, path){
 function runContentModel(node, particle, schema, errors, path, mixed){
   const children = elChildren(node);
   if(!particle){
-    if(children.length) errors.push({ msg:`${path}: não são permitidos elementos filhos aqui.` });
+    if(children.length) errors.push({ msg:`${path}: não são permitidos elementos filhos aqui.`, node });
     return;
   }
   const ends = matchParticle(particle, children, 0);
   if(!ends.has(children.length)){
     const exp = []; expectedNames(particle, exp);
     const got = children.map(c=>c.localName);
-    errors.push({ msg:`${path}: a ordem/número de filhos não corresponde ao esquema. Esperado: [${[...new Set(exp)].join(", ")}] · Encontrado: [${got.join(", ")||"vazio"}].` });
+    errors.push({ msg:`${path}: a ordem/número de filhos não corresponde ao esquema. Esperado: [${[...new Set(exp)].join(", ")}] · Encontrado: [${got.join(", ")||"vazio"}].`, node });
   }
   const map = {}; collectElementDecls(particle, map);
   for(const child of children){
@@ -472,12 +470,47 @@ function runContentModel(node, particle, schema, errors, path, mixed){
   }
 }
 
+/* ---- mapa de linhas (nó → linha no texto fonte) ---- */
+function countNL(str){ let n=0; for(let i=0;i<str.length;i++) if(str[i]==='\n') n++; return n; }
+function startTagLines(s){
+  const res = []; let line = 1; let i = 0;
+  while(i < s.length){
+    if(s[i] === '\n'){ line++; i++; continue; }
+    if(s[i] === '<'){
+      if(s.startsWith('<!--', i)){ const e=s.indexOf('-->', i+4); const seg=s.slice(i, e<0?s.length:e+3); line+=countNL(seg); i=(e<0?s.length:e+3); continue; }
+      if(s.startsWith('<![CDATA[', i)){ const e=s.indexOf(']]>', i+9); const seg=s.slice(i, e<0?s.length:e+3); line+=countNL(seg); i=(e<0?s.length:e+3); continue; }
+      if(s[i+1] === '?'){ const e=s.indexOf('?>', i+2); const seg=s.slice(i, e<0?s.length:e+2); line+=countNL(seg); i=(e<0?s.length:e+2); continue; }
+      if(s[i+1] === '!'){ const e=s.indexOf('>', i+2); const seg=s.slice(i, e<0?s.length:e+1); line+=countNL(seg); i=(e<0?s.length:e+1); continue; }
+      if(s[i+1] === '/'){ i+=2; continue; }
+      if(/[A-Za-z_]/.test(s[i+1] || '')){ res.push(line); i++; continue; }
+    }
+    i++;
+  }
+  return res;
+}
+function assignLines(xmlDoc, xmlStr){
+  const lines = startTagLines(xmlStr);
+  const map = new WeakMap();
+  let idx = 0;
+  (function walk(node){
+    map.set(node, lines[idx] != null ? lines[idx] : null);
+    idx++;
+    for(const c of elChildren(node)) walk(c);
+  })(xmlDoc.documentElement);
+  return map;
+}
+
 /* ---- orchestration ---- */
 function validateXmlAgainstXsd(xmlStr, xsdStr){
-  const out = { steps:{xmlWF:false, xsdWF:false, compiled:false, valid:false}, errors:[], fatal:null };
+  const out = { steps:{xmlWF:false, xsdWF:false, compiled:false, valid:false}, errors:[], fatal:null, xml:xmlStr, errorLines:new Set() };
 
   const xml = parseXml(xmlStr);
-  if(!xml.ok){ out.fatal = "O XML não está bem formado: " + xml.error; return out; }
+  if(!xml.ok){
+    const m = /line (\d+)/i.exec(xml.error);
+    if(m) out.errorLines.add(+m[1]);
+    out.fatal = "O XML não está bem formado: " + xml.error;
+    return out;
+  }
   out.steps.xmlWF = true;
 
   const xsd = parseXml(xsdStr);
@@ -491,14 +524,24 @@ function validateXmlAgainstXsd(xmlStr, xsdStr){
   const rootEl = xml.doc.documentElement;
   const decl = schema.elements[rootEl.localName];
   if(!decl){
-    out.errors.push({ msg:`O elemento raiz <${rootEl.localName}> não está declarado como elemento global no XSD. Globais: [${Object.keys(schema.elements).join(", ")||"nenhum"}].` });
-    return out;
+    out.errors.push({ msg:`O elemento raiz <${rootEl.localName}> não está declarado como elemento global no XSD. Globais: [${Object.keys(schema.elements).join(", ")||"nenhum"}].`, node:rootEl });
+  } else {
+    try {
+      validateElement(rootEl, decl, schema, out.errors, rootEl.localName);
+    } catch(e){
+      out.errors.push({ msg:"Erro inesperado durante a validação: " + e.message, node:rootEl });
+    }
   }
+
+  // atribuir linhas aos erros
   try {
-    validateElement(rootEl, decl, schema, out.errors, rootEl.localName);
-  } catch(e){
-    out.errors.push({ msg:"Erro inesperado durante a validação: " + e.message });
-  }
+    const lineMap = assignLines(xml.doc, xmlStr);
+    out.errors.forEach(e=>{
+      e.line = e.node ? (lineMap.get(e.node) || null) : null;
+      if(e.line) out.errorLines.add(e.line);
+    });
+  } catch(e){ /* sem linhas, mas mantém as mensagens */ }
+
   out.steps.valid = out.errors.length===0;
   return out;
 }
@@ -689,8 +732,9 @@ function renderResult(out){
       <span class="s ${out.steps.valid?'pass':(out.fatal?'':'fail')}">Instância válida</span>
     </div>`;
   if(out.fatal){
+    const view = (out.xml && out.errorLines && out.errorLines.size) ? renderXmlView(out.xml, out.errorLines) : "";
     el.innerHTML = `<div class="res bad">${steps}<h4>⚠ Não foi possível validar</h4>
-      <ul class="errlist"><li>${esc(out.fatal)}</li></ul></div>`;
+      <ul class="errlist"><li>${esc(out.fatal)}</li></ul>${view}</div>`;
     return;
   }
   if(out.errors.length===0){
@@ -698,10 +742,26 @@ function renderResult(out){
       <p class="sub">O documento está bem formado e respeita todas as regras do XSD.</p></div>`;
     return;
   }
-  const items = out.errors.map(e=>`<li>${esc(e.msg)}</li>`).join("");
+  const items = out.errors.map(e=>{
+    const ln = e.line ? `<span class="eln">Linha ${e.line}</span>` : "";
+    return `<li>${ln}${esc(e.msg)}</li>`;
+  }).join("");
+  const view = renderXmlView(out.xml, out.errorLines);
   el.innerHTML = `<div class="res bad">${steps}<h4>✗ ${out.errors.length} ${out.errors.length===1?'erro':'erros'} de validação</h4>
     <p class="sub">O XML está bem formado, mas viola o contrato definido no XSD:</p>
-    <ul class="errlist">${items}</ul></div>`;
+    <ul class="errlist">${items}</ul>${view}</div>`;
+}
+function renderXmlView(xmlStr, errorLines){
+  if(!xmlStr) return "";
+  const lines = xmlStr.replace(/\t/g, "  ").split("\n");
+  const rows = lines.map((ln, i)=>{
+    const num = i + 1;
+    const bad = errorLines && errorLines.has(num);
+    const code = highlightXml(ln) || "&nbsp;";
+    return `<div class="xrow${bad?' err':''}"><span class="ln">${num}</span><span class="xcode">${code}</span></div>`;
+  }).join("");
+  return `<div class="xml-view-cap">Documento XML — linhas com erro assinaladas a vermelho:</div>
+    <div class="xml-view">${rows}</div>`;
 }
 function runValidation(){
   const xml = document.getElementById("xmlIn").value;
