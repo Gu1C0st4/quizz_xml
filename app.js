@@ -838,7 +838,7 @@ function buildConcepts(){
     const code = c.code ? `<pre class="code">${highlightXml(c.code)}</pre>` : "";
     return `<details class="concept ${c.cat||''}">
       <summary><span class="dot"></span>${c.term}<span class="plus">+</span></summary>
-      <div class="cbody">${c.body}${code}</div>
+      <div class="cbody"><div class="cbody-inner">${c.body}${code}</div></div>
     </details>`;
   }).join("");
 }
@@ -979,12 +979,56 @@ function initScrollAnim(){
 }
 
 /* =========================================================================
+   ABRIR/FECHAR com animação (conceitos e toggles) — fluido e repetível
+   Técnica grid-template-rows 0fr↔1fr: anima a altura sem travas nem saltos.
+   ========================================================================= */
+function animateDetails(d, body){
+  const summary = d.querySelector('summary');
+  if(!summary || !body) return;
+  summary.addEventListener('click', (e)=>{
+    e.preventDefault();
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+    if(d.dataset.animating === '1') return;
+
+    if(!d.open){
+      // ABRIR — altura e fade em conjunto
+      d.open = true;             // conteúdo entra no DOM
+      d.classList.add('expanded'); // estado final (opacity 1 + rotação do +)
+      if(reduce) return;
+      d.dataset.animating = '1';
+      const h = body.scrollHeight;
+      const anim = body.animate(
+        [{ height:'0px', opacity:0 }, { height:h+'px', opacity:1 }],
+        { duration:300, easing:'cubic-bezier(.4,0,.2,1)' }
+      );
+      anim.onfinish = anim.oncancel = ()=>{ d.dataset.animating=''; };
+    } else {
+      // FECHAR — altura e fade em conjunto
+      if(reduce){ d.classList.remove('expanded'); d.open=false; return; }
+      d.dataset.animating = '1';
+      const h = body.scrollHeight;
+      d.classList.remove('expanded');
+      const anim = body.animate(
+        [{ height:h+'px', opacity:1 }, { height:'0px', opacity:0 }],
+        { duration:280, easing:'cubic-bezier(.4,0,.2,1)' }
+      );
+      anim.onfinish = anim.oncancel = ()=>{ d.open=false; d.dataset.animating=''; };
+    }
+  });
+}
+function initToggleAnim(){
+  document.querySelectorAll('.concept').forEach(d=> animateDetails(d, d.querySelector('.cbody')));
+  document.querySelectorAll('.reveal').forEach(d=> animateDetails(d, d.querySelector('.body')));
+}
+
+/* =========================================================================
    INIT
    ========================================================================= */
 document.addEventListener("DOMContentLoaded", ()=>{
   paintSnippets();
   buildPresets();
   buildConcepts();
+  initToggleAnim();
   buildQuiz();
   document.getElementById("runBtn").addEventListener("click", runValidation);
   document.getElementById("clearBtn").addEventListener("click", ()=>{
