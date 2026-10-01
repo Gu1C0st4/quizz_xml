@@ -118,7 +118,10 @@
   .reveal summary::-webkit-details-marker{display:none}
   .reveal summary::before{content:"▸ "; color:var(--teal)}
   .reveal[open] summary::before{content:"▾ "}
-  .reveal .body{margin-top:10px; color:var(--mut); font-size:14px}
+  .reveal .body{overflow:hidden; opacity:0; color:var(--mut); font-size:14px}
+  .reveal.expanded .body{opacity:1}
+  .reveal .body-inner{margin-top:10px}
+  .reveal.done .body-inner{overflow:visible}
   .tag-good{color:var(--teal)} .tag-bad{color:var(--coral)}
 
   /* SANDBOX */
@@ -202,7 +205,7 @@
   #conceitos-list{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; align-items:start}
   .concept{background:#fff; border:1px solid #e4ebf2; border-radius:14px; overflow:hidden;
     box-shadow:0 6px 22px rgba(13,26,43,.06); height:fit-content}
-  .concept[open]{border-color:var(--teal)}
+  .concept.expanded{border-color:var(--teal)}
   .concept summary{cursor:pointer; padding:15px 17px; display:flex; align-items:center; gap:12px;
     list-style:none; font-weight:700; font-size:15px; color:#102236}
   .concept summary::-webkit-details-marker{display:none}
@@ -211,8 +214,12 @@
   .concept.violet summary .dot{background:var(--violet)}
   .concept summary .plus{margin-left:auto; width:22px; height:22px; border-radius:7px; flex:none;
     display:grid; place-items:center; background:#eef3f8; color:#5a7187; font-weight:800; transition:transform .2s}
-  .concept[open] summary .plus{transform:rotate(45deg); color:var(--teal-d)}
-  .concept .cbody{padding:0 17px 17px; color:#415668; font-size:14px}
+  .concept.expanded summary .plus{transform:rotate(45deg); color:var(--teal-d)}
+  .concept .cbody{overflow:hidden; opacity:0; color:#415668; font-size:14px}
+  .concept.expanded .cbody{opacity:1}
+  .concept .cbody-inner{padding:0 17px 17px}
+  .concept .cbody-inner pre.code,
+  .reveal .body-inner pre.code{box-shadow:none; border-color:rgba(255,255,255,.12)}
   .concept .cbody p{margin:0 0 10px}
   .concept .cbody b{color:#102236}
   .concept .cbody code{color:var(--teal-d); background:rgba(31,174,156,.1); padding:1px 5px; border-radius:5px;
@@ -264,9 +271,7 @@
   /* ANIMAÇÕES */
   @keyframes revealDown{from{opacity:0; transform:translateY(-8px)} to{opacity:1; transform:none}}
   @keyframes qIn{from{opacity:0; transform:translateY(12px)} to{opacity:1; transform:none}}
-  .concept[open] .cbody{animation:revealDown .3s ease}
-  .reveal[open] .body{animation:revealDown .3s ease}
-  .concept{transition:border-color .16s ease, box-shadow .16s ease}
+  .concept{transition:border-color .3s ease, box-shadow .16s ease}
   .concept:hover{box-shadow:0 10px 26px rgba(16,34,54,.09)}
   .q{animation:qIn .34s ease both}
   #quizList .q:nth-child(2){animation-delay:.07s}
@@ -275,7 +280,7 @@
   .anim-in.in{opacity:1; transform:none}
   @media (prefers-reduced-motion:reduce){
     .anim-in{opacity:1 !important; transform:none !important; transition:none}
-    .concept[open] .cbody,.reveal[open] .body,.q{animation:none !important}
+    .concept .cbody,.reveal .body,.q{animation:none !important; transition:none !important}
     .card:hover{transform:none}
   }
 
@@ -382,13 +387,13 @@
         <div class="note"><b>Pista:</b> verifica aspas, maiúsculas/minúsculas, fecho de elementos e quantidade de raízes.</div>
         <details class="reveal">
           <summary>Ver a correção</summary>
-          <div class="body">
+          <div class="body"><div class="body-inner">
             <p>1. <span class="tag-bad">Atributo sem aspas</span> → <code>atualizadaEm="2026-09-25"</code>.<br>
             2. <span class="tag-bad">Maiúsculas trocadas</span> → <code>&lt;nome&gt;...&lt;/nome&gt;</code>.<br>
             3. <span class="tag-bad">Elemento não fechado</span> → <code>&lt;bicicletas disponiveis="12"/&gt;</code>.<br>
             4. <span class="tag-bad">Segunda raiz</span> → <code>&lt;estado&gt;</code> tem de ficar dentro da única raiz.</p>
             <pre class="code" data-snip="corrigido" style="margin-top:12px"></pre>
-          </div>
+          </div></div>
         </details>
       </div>
     </div>
