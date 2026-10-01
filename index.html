@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XML &amp; XSD · Aula interativa</title>
+<style>
+  :root{
+    --bg:#eef3f8; --bg2:#0b1726; --panel:#ffffff; --panel2:#f6f9fc;
+    --line:rgba(16,34,54,.10); --line2:rgba(19,160,143,.32);
+    --teal:#13a08f; --teal-d:#0d8577; --coral:#e05d46; --yellow:#c88a00; --violet:#7a63f0;
+    --tx:#102236; --mut:#4a6076; --mut2:#73879b;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --r:16px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:
+      radial-gradient(1100px 560px at 85% -10%, rgba(19,160,143,.09), transparent 60%),
+      radial-gradient(850px 460px at 0% 8%, rgba(224,93,70,.06), transparent 55%),
+      var(--bg);
+    color:var(--tx); font-family:var(--sans); line-height:1.6;
+    -webkit-font-smoothing:antialiased; padding-bottom:64px;
+  }
+  a{color:var(--teal); text-decoration:none}
+  h1,h2,h3,h4{line-height:1.15; margin:0; letter-spacing:-.02em; font-weight:800}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 22px}
+  .eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.22em; text-transform:uppercase; color:var(--teal); font-weight:700}
+
+  /* NAV */
+  nav{position:sticky; top:0; z-index:50; backdrop-filter:blur(12px);
+    background:rgba(255,255,255,.85); border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex; align-items:center; gap:18px; height:60px}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:-.02em; margin-right:auto}
+  .brand .dot{width:11px; height:11px; border-radius:3px; background:var(--teal); box-shadow:0 0 14px var(--teal)}
+  nav .links{display:flex; gap:4px; flex-wrap:wrap}
+  nav .links a{color:var(--mut); font-size:13.5px; font-weight:600; padding:7px 11px; border-radius:9px}
+  nav .links a:hover{color:var(--tx); background:rgba(16,34,54,.05)}
+  .burger{display:none}
+
+  /* HERO */
+  header.hero{padding:72px 0 54px}
+  .hero-grid{display:grid; grid-template-columns:1.05fr .95fr; gap:40px; align-items:center}
+  .hero h1{font-size:clamp(42px,7vw,76px); margin:14px 0 10px}
+  .hero h1 .ac{color:var(--teal)}
+  .hero p.lead{font-size:18px; color:var(--mut); max-width:46ch; margin:0 0 22px}
+  .hero .meta{font-family:var(--mono); font-size:12.5px; color:var(--mut2); letter-spacing:.04em}
+  .pills{display:flex; gap:8px; flex-wrap:wrap; margin:20px 0 0}
+  .pill{font-size:12.5px; font-weight:700; padding:6px 12px; border-radius:999px; border:1px solid var(--line2);
+    color:var(--teal); background:rgba(53,208,186,.07)}
+  .pill.c{color:var(--coral); border-color:rgba(255,122,102,.3); background:rgba(255,122,102,.07)}
+  .pill.y{color:var(--yellow); border-color:rgba(255,209,102,.3); background:rgba(255,209,102,.07)}
+  .hero .cta{display:flex; gap:12px; margin-top:26px; flex-wrap:wrap}
+  .btn{font-family:var(--sans); font-weight:700; font-size:14.5px; padding:12px 20px; border-radius:12px;
+    border:1px solid transparent; cursor:pointer; transition:transform .12s ease, background .15s}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:var(--teal); color:#fff; box-shadow:0 10px 26px rgba(19,160,143,.28)}
+  .btn.primary:hover{background:#17b3a0}
+  .btn.ghost{background:#fff; border-color:var(--line); color:var(--tx)}
+  .btn.ghost:hover{background:#eef3f8; border-color:var(--line2)}
+
+  /* code frame (title) */
+  .codeframe{position:relative}
+  .codeframe .blocks{position:absolute; right:-10px; top:-16px; display:flex; flex-direction:column; gap:8px}
+  .codeframe .blocks i{width:26px; height:26px; border-radius:7px; display:block}
+  pre.code{margin:0; background:linear-gradient(180deg,#0b1726,#081019); border:1px solid var(--line);
+    border-radius:14px; padding:18px 18px; overflow:auto; font-family:var(--mono); font-size:13px; line-height:1.7;
+    box-shadow:0 24px 60px rgba(0,0,0,.4)}
+  pre.code .bar{display:flex; gap:6px; margin:-4px 0 12px}
+  pre.code .bar b{width:10px; height:10px; border-radius:50%; display:inline-block}
+  .hl-tag{color:#4fd6c2} .hl-attr{color:#ffce6b} .hl-str{color:#ff9d87}
+  .hl-com{color:#6f8498; font-style:italic} .hl-decl{color:#b9abff}
+
+  /* SECTIONS */
+  section{padding:56px 0; border-top:1px solid var(--line)}
+  .sec-head{max-width:62ch; margin-bottom:30px}
+  .sec-head h2{font-size:clamp(26px,3.6vw,38px); margin:10px 0 10px}
+  .sec-head p{color:var(--mut); font-size:16px; margin:0}
+
+  .cards{display:grid; gap:16px}
+  .cards.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cards.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .cards.c4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line);
+    border-radius:var(--r); padding:18px 18px; position:relative; overflow:hidden;
+    box-shadow:0 4px 16px rgba(16,34,54,.05);
+    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease}
+  .card:hover{transform:translateY(-3px); box-shadow:0 14px 32px rgba(16,34,54,.11)}
+  .card .n{font-family:var(--mono); font-size:12px; font-weight:700; color:var(--teal); letter-spacing:.1em}
+  .card h4{font-size:16px; margin:7px 0 6px}
+  .card p{margin:0; color:var(--mut); font-size:14px}
+  .card.teal{border-color:var(--line2)} .card.teal .n{color:var(--teal)}
+  .card.coral .n{color:var(--coral)} .card.yellow .n{color:var(--yellow)} .card.violet .n{color:var(--violet)}
+  .card .edge{position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--teal)}
+  .card.coral .edge{background:var(--coral)} .card.yellow .edge{background:var(--yellow)} .card.violet .edge{background:var(--violet)}
+
+  .split{display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:start}
+  .note{background:rgba(255,209,102,.2); border:1px solid rgba(200,138,0,.32); border-radius:12px;
+    padding:14px 16px; color:#6b5300; font-size:14px}
+  .note b{color:#a06f00}
+  .callouts{display:flex; flex-direction:column; gap:12px}
+  .callout{display:flex; gap:12px; align-items:flex-start}
+  .callout .k{font-family:var(--mono); font-size:11px; font-weight:700; padding:4px 9px; border-radius:7px;
+    background:rgba(53,208,186,.12); color:var(--teal); white-space:nowrap; margin-top:2px}
+  .callout.c .k{background:rgba(255,122,102,.12); color:var(--coral)}
+  .callout.y .k{background:rgba(255,209,102,.12); color:var(--yellow)}
+  .callout p{margin:0; font-size:14px; color:var(--mut)}
+
+  table.cmp{width:100%; border-collapse:collapse; font-size:14px}
+  table.cmp td{padding:10px 12px; border:1px solid var(--line); vertical-align:top}
+  table.cmp td code{color:var(--teal)}
+
+  .reveal{background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-top:12px;
+    box-shadow:0 4px 16px rgba(16,34,54,.05)}
+  .reveal summary{cursor:pointer; font-weight:700; color:var(--teal); font-size:14px; list-style:none}
+  .reveal summary::-webkit-details-marker{display:none}
+  .reveal summary::before{content:"▸ "; color:var(--teal)}
+  .reveal[open] summary::before{content:"▾ "}
+  .reveal .body{margin-top:10px; color:var(--mut); font-size:14px}
+  .tag-good{color:var(--teal)} .tag-bad{color:var(--coral)}
+
+  /* SANDBOX */
+  .lab{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  .editor{display:flex; flex-direction:column; min-width:0}
+  .editor label{font-family:var(--mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--mut); margin-bottom:8px; display:flex; align-items:center; gap:8px}
+  .editor label .b{width:9px; height:9px; border-radius:50%; background:var(--teal)}
+  .editor.xsd label .b{background:var(--coral)}
+  textarea{width:100%; height:300px; resize:vertical; background:var(--bg2); color:#dfe9f2;
+    border:1px solid var(--line); border-radius:12px; padding:14px; font-family:var(--mono); font-size:12.5px;
+    line-height:1.6; tab-size:2; outline:none}
+  textarea:focus{border-color:var(--line2); box-shadow:0 0 0 3px rgba(53,208,186,.12)}
+  .lab-bar{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:16px 0}
+  .presets{display:flex; gap:7px; flex-wrap:wrap; margin-left:auto}
+  .chip{font-size:12.5px; font-weight:600; padding:7px 11px; border-radius:9px; cursor:pointer;
+    background:#fff; border:1px solid var(--line); color:var(--mut); transition:.14s}
+  .chip:hover{color:var(--tx); border-color:var(--line2); transform:translateY(-1px)}
+  #result{margin-top:4px}
+  .res{border-radius:12px; padding:16px 18px; border:1px solid var(--line)}
+  .res.ok{background:rgba(53,208,186,.1); border-color:var(--line2)}
+  .res.bad{background:rgba(255,122,102,.08); border-color:rgba(255,122,102,.3)}
+  .res h4{font-size:16px; margin:0 0 4px; display:flex; align-items:center; gap:9px}
+  .res.ok h4{color:var(--teal)} .res.bad h4{color:var(--coral)}
+  .res .sub{color:var(--mut); font-size:13.5px; margin:0 0 10px}
+  .errlist{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px}
+  .errlist li{background:rgba(224,93,70,.08); border-left:3px solid var(--coral); border-radius:8px;
+    padding:9px 12px; font-size:13px; font-family:var(--mono); color:#8a2d1c}
+  .errlist li.warn{border-left-color:var(--yellow); color:#6b4e00; background:rgba(200,138,0,.1)}
+  .steps{display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px; font-size:12.5px}
+  .steps .s{padding:5px 10px; border-radius:999px; border:1px solid var(--line); color:var(--mut2)}
+  .steps .s.pass{color:var(--teal); border-color:var(--line2); background:rgba(53,208,186,.08)}
+  .steps .s.fail{color:var(--coral); border-color:rgba(255,122,102,.3); background:rgba(255,122,102,.08)}
+
+  /* QUIZ */
+  .quiz-top{display:flex; align-items:center; gap:16px; margin-bottom:22px; flex-wrap:wrap}
+  .score{font-family:var(--mono); font-weight:700; color:var(--teal)}
+  .progress{flex:1; min-width:160px; height:8px; border-radius:999px; background:rgba(255,255,255,.07); overflow:hidden}
+  .progress i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--teal),var(--yellow)); transition:width .4s}
+  .q{background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line);
+    border-radius:var(--r); padding:20px 20px; margin-bottom:16px}
+  .q .qh{display:flex; gap:12px; align-items:baseline; margin-bottom:14px}
+  .q .qn{font-family:var(--mono); font-size:12px; font-weight:700; color:var(--teal); white-space:nowrap}
+  .q .qt{font-size:16px; font-weight:700}
+  .q pre.code{margin:12px 0 4px; font-size:12px}
+  .opts{display:flex; flex-direction:column; gap:9px; margin-top:4px}
+  .opt{display:flex; gap:11px; align-items:flex-start; padding:12px 14px; border-radius:11px; cursor:pointer;
+    border:1px solid var(--line); background:rgba(255,255,255,.02); transition:.12s; font-size:14.5px}
+  .opt:hover{border-color:var(--line2)}
+  .opt .mk{width:20px; height:20px; border-radius:6px; border:1.5px solid var(--mut2); flex:none; margin-top:1px;
+    display:grid; place-items:center; font-size:12px; font-weight:800}
+  .opt.correct{border-color:var(--teal); background:rgba(53,208,186,.1)}
+  .opt.correct .mk{background:var(--teal); border-color:var(--teal); color:#06201c}
+  .opt.wrong{border-color:var(--coral); background:rgba(255,122,102,.1)}
+  .opt.wrong .mk{background:var(--coral); border-color:var(--coral); color:#2a0b06}
+  .opt.disabled{cursor:default; opacity:.85}
+  .explain{margin-top:12px; font-size:13.5px; color:var(--mut); background:var(--bg2);
+    border-radius:10px; padding:11px 14px; border-left:3px solid var(--teal); display:none}
+  .explain.show{display:block}
+  .explain b{color:var(--tx)}
+
+  footer{padding:40px 0 10px; color:var(--mut2); font-size:13px; text-align:center}
+
+  /* CONCEITOS (toggles) — tema claro */
+  #conceitos{background:#f5f8fb; color:#102236}
+  #conceitos .sec-head h2{color:#0d1a2b}
+  #conceitos .sec-head p{color:#4a6076}
+  #conceitos .eyebrow{color:var(--teal-d)}
+  #conceitos-list{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; align-items:start}
+  .concept{background:#fff; border:1px solid #e4ebf2; border-radius:14px; overflow:hidden;
+    box-shadow:0 6px 22px rgba(13,26,43,.06); height:fit-content}
+  .concept[open]{border-color:var(--teal)}
+  .concept summary{cursor:pointer; padding:15px 17px; display:flex; align-items:center; gap:12px;
+    list-style:none; font-weight:700; font-size:15px; color:#102236}
+  .concept summary::-webkit-details-marker{display:none}
+  .concept summary .dot{width:9px; height:9px; border-radius:50%; background:var(--teal-d); flex:none}
+  .concept.coral summary .dot{background:var(--coral)} .concept.yellow summary .dot{background:#e0a800}
+  .concept.violet summary .dot{background:var(--violet)}
+  .concept summary .plus{margin-left:auto; width:22px; height:22px; border-radius:7px; flex:none;
+    display:grid; place-items:center; background:#eef3f8; color:#5a7187; font-weight:800; transition:transform .2s}
+  .concept[open] summary .plus{transform:rotate(45deg); color:var(--teal-d)}
+  .concept .cbody{padding:0 17px 17px; color:#415668; font-size:14px}
+  .concept .cbody p{margin:0 0 10px}
+  .concept .cbody b{color:#102236}
+  .concept .cbody code{color:var(--teal-d); background:rgba(31,174,156,.1); padding:1px 5px; border-radius:5px;
+    font-family:var(--mono); font-size:12.5px}
+  .concept .cbody pre.code{font-size:12px; margin:10px 0 0}
+
+  /* QUIZ — tema claro */
+  #quiz{background:#f5f8fb; color:#102236}
+  #quiz .sec-head h2{color:#0d1a2b}
+  #quiz .sec-head p{color:#4a6076}
+  #quiz .eyebrow{color:var(--teal-d)}
+  #quiz .score{color:var(--teal-d)}
+  #quiz .progress{background:#dde6ef}
+  #quiz .q{background:#fff; border:1px solid #e4ebf2; box-shadow:0 6px 22px rgba(13,26,43,.06)}
+  #quiz .q .qt{color:#102236}
+  #quiz .q .qn{color:var(--teal-d)}
+  #quiz code{color:var(--teal-d); background:rgba(31,174,156,.1); padding:1px 5px; border-radius:5px;
+    font-family:var(--mono); font-size:12.5px}
+  #quiz .opt{background:#fff; border:1px solid #e4ebf2; color:#1a2d42}
+  #quiz .opt:hover{border-color:var(--teal); background:#f1fbf8}
+  #quiz .opt .mk{border-color:#b9c6d4}
+  #quiz .opt.correct{border-color:var(--teal-d); background:#e8faf5}
+  #quiz .opt.correct .mk{background:var(--teal-d); border-color:var(--teal-d); color:#fff}
+  #quiz .opt.wrong{border-color:var(--coral); background:#fdeee9}
+  #quiz .opt.wrong .mk{background:var(--coral); border-color:var(--coral); color:#fff}
+  #quiz .explain{background:#eef5fb; color:#415668; border-left-color:var(--teal-d)}
+  #quiz .explain b{color:#102236}
+  #quiz .btn.ghost{border-color:#cfdae6; color:#1a2d42; background:#fff}
+  #quiz .btn.ghost:hover{background:#eef3f8}
+  .quiz-pager{display:flex; align-items:center; justify-content:center; gap:16px; margin-top:18px; flex-wrap:wrap}
+  .quiz-pager .pg{font-family:var(--mono); font-size:13px; font-weight:700; color:#4a6076}
+  .quiz-pager .btn.primary{background:var(--teal-d); color:#fff}
+  .quiz-pager .btn.primary:hover{background:#23c2ae}
+  .quiz-pager button:disabled{opacity:.4; cursor:default; transform:none}
+
+  @media (max-width:860px){
+    #conceitos-list{grid-template-columns:1fr}
+  }
+
+  @media (max-width:860px){
+    .hero-grid{grid-template-columns:1fr; gap:28px}
+    .cards.c3,.cards.c4{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .split,.lab{grid-template-columns:1fr}
+    nav .links{display:none}
+  }
+  @media (max-width:520px){
+    .cards.c2,.cards.c3,.cards.c4{grid-template-columns:1fr}
+  }
+  /* ANIMAÇÕES */
+  @keyframes revealDown{from{opacity:0; transform:translateY(-8px)} to{opacity:1; transform:none}}
+  @keyframes qIn{from{opacity:0; transform:translateY(12px)} to{opacity:1; transform:none}}
+  .concept[open] .cbody{animation:revealDown .3s ease}
+  .reveal[open] .body{animation:revealDown .3s ease}
+  .concept{transition:border-color .16s ease, box-shadow .16s ease}
+  .concept:hover{box-shadow:0 10px 26px rgba(16,34,54,.09)}
+  .q{animation:qIn .34s ease both}
+  #quizList .q:nth-child(2){animation-delay:.07s}
+  #quizList .q:nth-child(3){animation-delay:.14s}
+  .anim-in{opacity:0; transform:translateY(16px); transition:opacity .55s ease, transform .55s ease}
+  .anim-in.in{opacity:1; transform:none}
+  @media (prefers-reduced-motion:reduce){
+    .anim-in{opacity:1 !important; transform:none !important; transition:none}
+    .concept[open] .cbody,.reveal[open] .body,.q{animation:none !important}
+    .card:hover{transform:none}
+  }
+
+  @media print{
+    nav,.hero .cta,.lab-bar,.presets{display:none}
+    body{background:#fff; color:#111; padding:0}
+    section{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span> XML &amp; XSD</div>
+    <div class="links">
+      <a href="#fundamentos">Fundamentos</a>
+      <a href="#bemformado">Bem formado</a>
+      <a href="#elematr">Elementos &amp; Atributos</a>
+      <a href="#xsd">XSD</a>
+      <a href="#conceitos">Conceitos</a>
+      <a href="#sandbox">Sandbox</a>
+      <a href="#quiz">Quiz</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">Estruturação de dados</span>
+      <h1>XML <span class="ac">&amp;</span> XSD</h1>
+      <p class="lead">Dados legíveis, interoperáveis e validados. Aprende a modelar em XML, a distinguir <em>bem formado</em> de <em>válido</em>, e a escrever o contrato em XSD — com quizzes e um laboratório que valida mesmo no browser.</p>
+      <div class="pills">
+        <span class="pill">interoperável</span>
+        <span class="pill c">extensível</span>
+        <span class="pill y">validável</span>
+        <span class="pill">auto-descritivo</span>
+      </div>
+      <div class="cta">
+        <button class="btn primary" onclick="document.getElementById('sandbox').scrollIntoView()">Abrir o Sandbox</button>
+        <button class="btn ghost" onclick="document.getElementById('fundamentos').scrollIntoView()">Começar pela teoria</button>
+      </div>
+      <p class="meta" style="margin-top:24px">Tecnologias para o Desenvolvimento Web · 2026/2027 · a partir dos teus PDFs</p>
+    </div>
+    <div class="codeframe">
+      <div class="blocks"><i style="background:var(--coral)"></i><i style="background:var(--yellow)"></i><i style="background:var(--teal)"></i></div>
+      <pre class="code" data-snip="hero"><div class="bar"><b style="background:#ff5f56"></b><b style="background:#ffbd2e"></b><b style="background:#27c93f"></b></div></pre>
+    </div>
+  </div>
+</header>
+
+<section id="fundamentos">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">01 · O que é</span>
+      <h2>XML: uma árvore de dados que humanos e máquinas leem</h2>
+      <p>XML (eXtensible Markup Language) é um standard da W3C de 1998 para estruturar dados de forma hierárquica, independente de como são guardados ou transmitidos. Não traz semântica — define estrutura e conteúdo, não comportamento.</p>
+    </div>
+    <div class="cards c4">
+      <div class="card teal"><span class="edge"></span><div class="n">STANDARD</div><h4>Da W3C</h4><p>Uma forma comum de comunicar entre sistemas com software e hardware diferentes.</p></div>
+      <div class="card coral"><span class="edge"></span><div class="n">TEXTO</div><h4>ASCII / UTF-8</h4><p>Legível e partilhável; estruturado por tags, ao contrário de texto plano.</p></div>
+      <div class="card yellow"><span class="edge"></span><div class="n">ÁRVORE</div><h4>Hierárquico</h4><p>Um elemento raiz e elementos filhos ordenados (DOM — Document Object Model).</p></div>
+      <div class="card violet"><span class="edge"></span><div class="n">BASE</div><h4>Extensível</h4><p>HTML, SVG, OOXML, RSS, SOAP, Maven, Android... todos assentam em XML.</p></div>
+    </div>
+
+    <div class="split" style="margin-top:26px">
+      <div>
+        <h3 style="font-size:18px; margin-bottom:12px">Anatomia de um documento</h3>
+        <pre class="code" data-snip="anatomia"></pre>
+      </div>
+      <div class="callouts" style="padding-top:40px">
+        <div class="callout"><span class="k">raiz</span><p>Um único elemento envolve todo o documento: <code>rede</code>.</p></div>
+        <div class="callout"><span class="k">elementos</span><p>Representam entidades ou valores: <code>estacao</code>, <code>nome</code>, <code>localizacao</code>.</p></div>
+        <div class="callout c"><span class="k">atributos</span><p>Qualificam o elemento: <code>id</code>, <code>lat</code>, <code>lon</code>, <code>disponiveis</code>.</p></div>
+        <div class="callout y"><span class="k">ordem</span><p>A ordem dos filhos faz parte do documento e pode ser imposta pelo XSD.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="bemformado">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">02 · Sintaxe</span>
+      <h2>Bem formado: cinco regras essenciais</h2>
+      <p>Bem formado descreve a sintaxe. Ainda não garante que os dados respeitam o contrato do domínio — isso é tarefa do XSD.</p>
+    </div>
+    <div class="cards c3">
+      <div class="card teal"><span class="edge"></span><div class="n">1</div><h4>Uma raiz</h4><p>Existe exatamente um elemento raiz a envolver tudo.</p></div>
+      <div class="card teal"><span class="edge"></span><div class="n">2</div><h4>Fecho correto</h4><p>Cada tag aberta é fechada, ou é vazia com <code>/&gt;</code>.</p></div>
+      <div class="card teal"><span class="edge"></span><div class="n">3</div><h4>Aninhamento</h4><p>Os elementos não se cruzam; abrem e fecham por ordem.</p></div>
+      <div class="card coral"><span class="edge"></span><div class="n">4</div><h4>Maiúsculas</h4><p><code>&lt;Nome&gt;</code> e <code>&lt;nome&gt;</code> são elementos diferentes.</p></div>
+      <div class="card yellow"><span class="edge"></span><div class="n">5</div><h4>Aspas</h4><p>Os valores dos atributos ficam sempre entre aspas.</p></div>
+      <div class="card violet"><span class="edge"></span><div class="n">+</div><h4>Comentários</h4><p><code>&lt;!-- ... --&gt;</code> como em HTML; nunca antes da declaração.</p></div>
+    </div>
+
+    <div class="split" style="margin-top:26px">
+      <div>
+        <h3 style="font-size:18px; margin-bottom:12px"><span class="tag-bad">●</span> Desafio: encontra os quatro problemas</h3>
+        <pre class="code" data-snip="erros"></pre>
+      </div>
+      <div style="padding-top:40px">
+        <div class="note"><b>Pista:</b> verifica aspas, maiúsculas/minúsculas, fecho de elementos e quantidade de raízes.</div>
+        <details class="reveal">
+          <summary>Ver a correção</summary>
+          <div class="body">
+            <p>1. <span class="tag-bad">Atributo sem aspas</span> → <code>atualizadaEm="2026-09-25"</code>.<br>
+            2. <span class="tag-bad">Maiúsculas trocadas</span> → <code>&lt;nome&gt;...&lt;/nome&gt;</code>.<br>
+            3. <span class="tag-bad">Elemento não fechado</span> → <code>&lt;bicicletas disponiveis="12"/&gt;</code>.<br>
+            4. <span class="tag-bad">Segunda raiz</span> → <code>&lt;estado&gt;</code> tem de ficar dentro da única raiz.</p>
+            <pre class="code" data-snip="corrigido" style="margin-top:12px"></pre>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="elematr">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">03 · Modelação</span>
+      <h2>Elementos ou atributos?</h2>
+      <p>Não há regra universal: a consistência e o contrato importam mais. Mesmo assim, há boas heurísticas.</p>
+    </div>
+    <div class="cards c2">
+      <div class="card teal"><span class="edge"></span><div class="n">USA ELEMENTOS PARA</div>
+        <p style="margin-top:8px">Conteúdo principal, estruturas repetidas, valores extensíveis e dados que podem vir a ganhar subestrutura.</p></div>
+      <div class="card coral"><span class="edge"></span><div class="n">USA ATRIBUTOS PARA</div>
+        <p style="margin-top:8px">Identificadores, metadados compactos e propriedades simples que qualificam um elemento.</p></div>
+    </div>
+    <div style="margin-top:22px">
+      <table class="cmp">
+        <tr><td style="width:34%"><b>Mesma informação, 3 formas</b></td><td><code>&lt;data&gt;22 Outubro 2020&lt;/data&gt;</code></td></tr>
+        <tr><td>com subelementos</td><td><code>&lt;data&gt;&lt;a&gt;2020&lt;/a&gt;&lt;m&gt;10&lt;/m&gt;&lt;d&gt;22&lt;/d&gt;&lt;/data&gt;</code></td></tr>
+        <tr><td>com atributo</td><td><code>&lt;data formato="ISO-8601"&gt;2020-10-22&lt;/data&gt;</code></td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="xsd">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">04 · Validação</span>
+      <h2>XSD descreve o contrato</h2>
+      <p>Um documento bem formado pode continuar errado para o domínio (id vazio, preço negativo…). O XSD é um ficheiro <code>.xsd</code> separado que define as regras que o <code>.xml</code> tem de obedecer.</p>
+    </div>
+    <div class="cards c3">
+      <div class="card teal"><span class="edge"></span><div class="n">ESTRUTURA</div><p style="margin-top:6px">Elementos, atributos e hierarquia.</p></div>
+      <div class="card teal"><span class="edge"></span><div class="n">ORDEM</div><p style="margin-top:6px"><code>sequence</code>, <code>choice</code> e <code>all</code>.</p></div>
+      <div class="card teal"><span class="edge"></span><div class="n">CARDINALIDADE</div><p style="margin-top:6px"><code>minOccurs</code> e <code>maxOccurs</code>.</p></div>
+      <div class="card coral"><span class="edge"></span><div class="n">TIPOS</div><p style="margin-top:6px">string, integer, decimal, dateTime…</p></div>
+      <div class="card coral"><span class="edge"></span><div class="n">RESTRIÇÕES</div><p style="margin-top:6px">limites, padrões, tamanhos, enumerações.</p></div>
+      <div class="card coral"><span class="edge"></span><div class="n">REUTILIZAÇÃO</div><p style="margin-top:6px"><code>simpleType</code> e <code>complexType</code> nomeados.</p></div>
+    </div>
+
+    <div class="split" style="margin-top:30px">
+      <div>
+        <h3 style="font-size:18px; margin-bottom:12px">Ligar o XSD ao XML</h3>
+        <pre class="code" data-snip="ligacao"></pre>
+        <div class="note" style="margin-top:12px"><b>Nota:</b> a associação no XML é apenas uma pista para ferramentas. A aplicação pode escolher explicitamente o esquema usado na validação.</div>
+      </div>
+      <div>
+        <h3 style="font-size:18px; margin-bottom:12px">Tipos simples ganham significado</h3>
+        <div class="cards c3" style="gap:10px">
+          <div class="card"><div class="n">xs:string</div><p>Rossio</p></div>
+          <div class="card"><div class="n">xs:integer</div><p>12</p></div>
+          <div class="card"><div class="n">xs:decimal</div><p>40.6575</p></div>
+          <div class="card"><div class="n">xs:boolean</div><p>true</p></div>
+          <div class="card"><div class="n">xs:date</div><p>2026-09-25</p></div>
+          <div class="card"><div class="n">xs:dateTime</div><p>...T09:30:00Z</p></div>
+        </div>
+        <div class="note" style="margin-top:12px">Em XSD, decimais usam <b>ponto</b> e datas seguem o formato <b>ISO 8601</b>.</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:18px; margin:34px 0 12px">Restrições: criar um tipo do domínio</h3>
+    <div class="split">
+      <pre class="code" data-snip="restricao"></pre>
+      <div class="callouts" style="padding-top:16px">
+        <div class="callout"><span class="k">aceite</span><p><code>0 · 12 · 80</code></p></div>
+        <div class="callout c"><span class="k">rejeitado</span><p><code>-1 · 81 · doze</code></p></div>
+        <div class="callout y"><span class="k">pattern</span><p>Expressão regular: <code>PT-[A-Z]{3}-[0-9]{2}</code> para o id da estação.</p></div>
+        <div class="callout"><span class="k">enum</span><p>Conjunto fechado: <code>operacional</code> | <code>manutencao</code>.</p></div>
+      </div>
+    </div>
+
+    <h3 style="font-size:18px; margin:34px 0 12px">Compositores &amp; cardinalidade</h3>
+    <div class="cards c3">
+      <div class="card teal"><span class="edge"></span><div class="n">SEQUENCE</div><h4>A → B → C</h4><p>Todos aparecem pela ordem declarada.</p></div>
+      <div class="card coral"><span class="edge"></span><div class="n">CHOICE</div><h4>A ou B</h4><p>Escolhe uma das alternativas.</p></div>
+      <div class="card yellow"><span class="edge"></span><div class="n">ALL</div><h4>A + B + C</h4><p>Qualquer ordem; em XSD 1.0 cada um ocorre 0 ou 1 vez.</p></div>
+    </div>
+    <div class="cards c4" style="margin-top:14px">
+      <div class="card"><div class="n">1..1</div><p>obrigatório, uma vez</p></div>
+      <div class="card"><div class="n">0..1</div><p>opcional</p></div>
+      <div class="card"><div class="n">0..*</div><p>lista opcional</p></div>
+      <div class="card"><div class="n">1..*</div><p>lista não vazia</p></div>
+    </div>
+
+    <h3 style="font-size:18px; margin:34px 0 12px">Tipos complexos e tipos nomeados (reutilização)</h3>
+    <div class="split">
+      <pre class="code" data-snip="complexo"></pre>
+      <div class="callouts" style="padding-top:16px">
+        <div class="callout"><span class="k">sequence</span><p>Impõe a ordem dos filhos.</p></div>
+        <div class="callout"><span class="k">attribute</span><p>Qualifica o tipo complexo; <code>use="required"</code>.</p></div>
+        <div class="callout y"><span class="k">nomeado</span><p>Um <code>complexType name="..."</code> define-se uma vez e reutiliza-se em vários elementos.</p></div>
+        <div class="callout c"><span class="k">ref</span><p>Permite referenciar elementos/atributos globais e dividir o XSD.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="conceitos">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">05 · Glossário</span>
+      <h2>Conceitos essenciais, um a um</h2>
+      <p>Abre cada cartão para rever a ideia com um exemplo rápido. Bom para consultar antes do sandbox ou do quiz.</p>
+    </div>
+    <div id="conceitos-list"></div>
+  </div>
+</section>
+
+<section id="sandbox">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">06 · Laboratório</span>
+      <h2>Sandbox: valida o teu XML contra o XSD</h2>
+      <p>Escreve (ou carrega um exemplo), carrega em <b>Validar</b> e vê o resultado. O validador corre no browser e cobre o essencial do XSD dado na aula: tipos, facetas (padrão, enumeração, limites, tamanho), <code>sequence/choice/all</code>, cardinalidade, atributos e tipos nomeados.</p>
+    </div>
+    <div class="lab">
+      <div class="editor xml">
+        <label><span class="b"></span> documento.xml</label>
+        <textarea id="xmlIn" spellcheck="false"></textarea>
+      </div>
+      <div class="editor xsd">
+        <label><span class="b"></span> esquema.xsd</label>
+        <textarea id="xsdIn" spellcheck="false"></textarea>
+      </div>
+    </div>
+    <div class="lab-bar">
+      <button class="btn primary" id="runBtn">▶ Validar</button>
+      <button class="btn ghost" id="clearBtn">Limpar</button>
+      <div class="presets" id="presets"></div>
+    </div>
+    <div id="result"></div>
+  </div>
+</section>
+
+<section id="quiz">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">07 · Consolidar</span>
+      <h2>Quiz: põe à prova o que percebeste</h2>
+      <p>Clica numa opção para responder — recebes logo o feedback e a explicação. Três perguntas de cada vez.</p>
+    </div>
+    <div class="quiz-top">
+      <span class="score" id="score">0 / 0</span>
+      <div class="progress"><i id="progBar"></i></div>
+      <button class="btn ghost" id="resetQuiz">Recomeçar</button>
+    </div>
+    <div id="quizList"></div>
+    <div class="quiz-pager" id="quizPager"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">Construído a partir dos teus PDFs · XML &amp; XSD · TDW 2026/2027</div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
